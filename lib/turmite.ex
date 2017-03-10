@@ -1,34 +1,62 @@
 defmodule Turmite do
 
-  def create(size) when is_integer(size) do
-    grid = Grid.create(size)
-    create(grid)
+  defstruct(
+    position: {0, 0},
+    orientation: :north,
+    grid: %Grid{default: 0},
+    state: 0,
+    transitions: %{
+      # {state, color} => {new_state, new_color, rotation}
+      {0, 0} => {0, 1, :right},
+      {0, 1} => {1, 1, :right},
+      {1, 0} => {0, 0, :nil},
+      {1, 1} => {1, 0, :nil}
+    })
+
+  def step(turmite) do
+    {new_state, new_color, rotation} = transition(turmite)
+    turmite
+    |> paint(new_color)
+    |> set_state(new_state)
+    |> rotate(rotation)
+    |> foward
   end
 
-  def create(initial_grid) do
+  def step(turmite, iterations) do
+    case iterations do
+      1 -> step(turmite)
+      x -> step(step(turmite), x - 1)
+    end
+  end
+
+  def transition(turmite) do
     %{
-      grid: initial_grid,
-      ant: %{
-        position: Grid.center(initial_grid),
-        orientation: :north,
-        state: 0
-      }
-    }
+      position: {x, y},
+      state: state,
+      grid: grid,
+      transitions: transitions
+    } = turmite
+
+    color = Grid.get(grid, x, y)
+    Map.get(transitions, {state, color})
   end
 
-  def toggle_state(turmite) do
-    Map.update!(turmite, :ant, fn ant ->
-      Map.update!(ant, :state, fn state ->
-        state == 0 && 1 || 0 end) end)
+  def paint(turmite, color) do
+    %{position: {x, y}, grid: grid} = turmite
+    %{turmite | grid: Grid.set(grid, x, y, color)}
   end
 
-  def toggle_color(turmite) do
-    %{ant: %{position: {x, y}}} = turmite
-    Map.update!(turmite, :grid, &(Grid.toggle(&1, x, y)))
+  def set_state(turmite, new_state) do
+    %{turmite | state: new_state}
+  end
+
+  def rotate(turmite, rotation) do
+    %{orientation: orientation} = turmite
+    %{turmite | orientation: new_orientation(orientation, rotation)}
   end
 
   def foward(turmite) do
-    %{ant: %{position: {x, y}, orientation: orientation}} = turmite
+    %{position: {x, y}, orientation: orientation} = turmite
     new_position = case orientation do
       :north -> {x, y + 1}
       :east -> {x + 1, y}
@@ -36,57 +64,27 @@ defmodule Turmite do
       :west -> {x - 1, y}
     end
 
-    Map.update!(turmite, :ant, fn ant ->
-      Map.put(ant, :position, new_position) end)
+    %{turmite | position: new_position}
   end
 
   def new_orientation(orientation, rotation) do
     case {orientation, rotation} do
+      {current, :nil} -> current
+
       {:north, :right} -> :east
       {:east, :right} -> :south
       {:south, :right} -> :west
       {:west, :right} -> :north
-    end
-  end
-  
-  def rotate(turmite, where) do
-    Map.update!(turmite, :ant, fn ant ->
-      Map.update!(ant, :orientation, fn orientation ->
-        new_orientation(orientation, where) end) end)
-  end
 
-  def step(turmite) do
-    %{
-      grid: grid,
-      ant: %{
-        position: {x, y},
-        state: state
-      }
-    } = turmite
-    current_color = Grid.get(grid, x, y) && 1 || 0
-    
-    case {state, current_color} do
-      {0, 0} -> turmite 
-        |> rotate(:right)
-        |> toggle_color
-        |> foward
-      {0, 1} -> turmite
-        |> rotate(:right)
-        |> toggle_state
-        |> foward
-      {1, 0} -> turmite
-        |> toggle_state
-        |> foward
-      {1, 1} -> turmite
-        |> toggle_color
-        |> foward
-    end
-  end
-
-  def step_n(turmite, iterations) do
-    case iterations do
-      1 -> step(turmite)
-      x -> step_n(step(turmite), x - 1)
+      {:north, :left} -> :west
+      {:east, :left} -> :north
+      {:south, :left} -> :east
+      {:west, :left} -> :south
+      
+      {:north, :u_turn} -> :south
+      {:east, :u_turn} -> :west
+      {:south, :u_turn} -> :north
+      {:west, :u_turn} -> :east
     end
   end
 

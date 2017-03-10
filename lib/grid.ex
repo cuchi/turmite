@@ -1,36 +1,53 @@
 defmodule Grid do
   
-  def create(size) do
-    {size, MapSet.new}
-  end
+  defstruct(
+    default: nil,
+    cells: %{})
 
-  def show(grid) do
-    {size, _} = grid
-    last_index = size - 1
-    for x <- 0..last_index do
-      for y <- 0..last_index do
-        get(grid, x, y) && 1 || 0
-      end
-      |> Enum.join(" ")
-      |> IO.puts
+  def get(grid, x, y) do
+    %{default: default, cells: cells} = grid
+
+    case Map.get(cells, {x, y}) do
+      nil -> default
+      value -> value
     end
-    :ok
   end
 
-  def center({size, _}) do
-    center = div(size, 2)
-    {center, center}
+  def set(grid, x, y, value) do
+    %{default: default, cells: cells} = grid
+
+    new_cells = case value do
+      ^default -> Map.delete(cells, {x, y})
+      _ -> Map.put(cells, {x, y}, value)
+    end
+    
+    %Grid{default: default, cells: new_cells}
   end
 
-  def get({_, cells}, x, y) do
-    MapSet.member?(cells, {x, y})
+  def boundaries(grid) do
+   %{cells: cells} = grid
+    boundaries = %{
+      north: 0,
+      east: 0,
+      south: 0,
+      west: 0
+    }
+
+    cells
+    |> Map.keys
+    |> Enum.reduce(boundaries, 
+      fn({x, y}, %{north: n, east: e, south: s, west: w}) ->
+        %{
+          north: max(n, y),
+          east: max(e, x),
+          south: min(s, y),
+          west: min(w, x)
+        }
+      end)
   end
 
-  def toggle({size, cells}, x, y) do
-    new_cells = MapSet.member?(cells, {x, y})
-      && MapSet.delete(cells, {x, y})
-      || MapSet.put(cells, {x, y})
-    {size, new_cells}
+  def show(_grid) do
+    :not_implemented
   end
   
 end
