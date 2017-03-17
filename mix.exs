@@ -7,6 +7,7 @@ defmodule Turmite.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     escript: [main_module: Turmite.CLI],
      deps: deps()]
   end
 
@@ -17,7 +18,8 @@ defmodule Turmite.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.14", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
+      {:png, git: "https://github.com/yuce/png"}
     ]
   end
 end

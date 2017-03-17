@@ -88,4 +88,8 @@ defmodule Turmite do
     end
   end
 
+  def extract_grid(turmite) do
+    turmite.grid
+  end
+
 end

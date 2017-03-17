@@ -5,10 +5,8 @@ defmodule Grid do
     cells: %{})
 
   def get(grid, x, y) do
-    %{default: default, cells: cells} = grid
-
-    case Map.get(cells, {x, y}) do
-      nil -> default
+    case Map.get(grid.cells, {x, y}) do
+      nil -> grid.default
       value -> value
     end
   end
@@ -25,7 +23,6 @@ defmodule Grid do
   end
 
   def boundaries(grid) do
-   %{cells: cells} = grid
     boundaries = %{
       north: 0,
       east: 0,
@@ -33,21 +30,35 @@ defmodule Grid do
       west: 0
     }
 
-    cells
+    grid.cells
     |> Map.keys
     |> Enum.reduce(boundaries, 
-      fn({x, y}, %{north: n, east: e, south: s, west: w}) ->
+      fn({x, y}, boundaries) ->
         %{
-          north: max(n, y),
-          east: max(e, x),
-          south: min(s, y),
-          west: min(w, x)
+          north: max(boundaries.north, y),
+          east: max(boundaries.east, x),
+          south: min(boundaries.south, y),
+          west: min(boundaries.west, x)
         }
       end)
   end
 
-  def show(_grid) do
-    :not_implemented
+  def size(grid) do
+    Enum.count(grid.cells)
+  end
+
+  def to_matrix(grid) do
+    %{
+      south: min_y, 
+      north: max_y, 
+      west: min_x, 
+      east: max_x
+    } = boundaries(grid)
+    for y <- max_y..min_y do
+      for x <- min_x..max_x do
+        Grid.get(grid, x, y)
+      end
+    end
   end
   
 end
