@@ -21,3 +21,6 @@ erl_crash.dump
 
 # Compiled binary
 /turmite
+
+# Generated png images
+/*.png
